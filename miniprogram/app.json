@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/questionBank/questionBank",
+    "pages/wrongBook/wrongBook",
+    "pages/my/my",
+    "pages/quiz/quiz",
+    "pages/quizResult/quizResult"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#4F7CFF",
+    "navigationBarTitleText": "刷题助手",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F7FA"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#4F7CFF",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页",
+        "iconPath": "images/tab-home.png",
+        "selectedIconPath": "images/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/questionBank/questionBank",
+        "text": "题库",
+        "iconPath": "images/tab-book.png",
+        "selectedIconPath": "images/tab-book-active.png"
+      },
+      {
+        "pagePath": "pages/wrongBook/wrongBook",
+        "text": "错题本",
+        "iconPath": "images/tab-wrong.png",
+        "selectedIconPath": "images/tab-wrong-active.png"
+      },
+      {
+        "pagePath": "pages/my/my",
+        "text": "我的",
+        "iconPath": "images/tab-my.png",
+        "selectedIconPath": "images/tab-my-active.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

@@ -1,0 +1,85 @@
+/* Category Picker */
+.category-picker-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx;
+}
+
+.picker-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.picker-value {
+  display: flex;
+  align-items: center;
+}
+
+.picker-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #4F7CFF;
+  margin-right: 8rpx;
+}
+
+.picker-arrow {
+  font-size: 24rpx;
+  color: #4F7CFF;
+}
+
+/* Chapter List */
+.chapter-list {
+  margin-top: 8rpx;
+}
+
+.chapter-item {
+  padding: 28rpx;
+}
+
+.chapter-item:active {
+  opacity: 0.85;
+}
+
+.chapter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.chapter-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 16rpx;
+}
+
+.chapter-count {
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.chapter-progress {
+  display: flex;
+  align-items: center;
+}
+
+.chapter-progress .progress-bar {
+  flex: 1;
+  margin-right: 16rpx;
+}
+
+.chapter-percent {
+  font-size: 24rpx;
+  color: #4F7CFF;
+  font-weight: 600;
+  width: 72rpx;
+  text-align: right;
+  flex-shrink: 0;
+}

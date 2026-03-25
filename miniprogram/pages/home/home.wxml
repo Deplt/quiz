@@ -1,0 +1,100 @@
+<view class="container">
+  <!-- Category Selector -->
+  <view class="category-bar card" bindtap="toggleCategoryPicker">
+    <view class="category-bar-inner">
+      <text class="category-label">当前考试</text>
+      <view class="category-value-wrap">
+        <text class="category-value">{{categoryName || '请选择考试分类'}}</text>
+        <text class="arrow-icon">&#9662;</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Category Picker Overlay -->
+  <view class="picker-mask" wx:if="{{showCategoryPicker}}" bindtap="closeCategoryPicker">
+    <view class="picker-content" catchtap="stopPropagation">
+      <view class="picker-header">
+        <text class="picker-title">选择考试分类</text>
+        <text class="picker-close" bindtap="closeCategoryPicker">&#10005;</text>
+      </view>
+      <scroll-view scroll-y class="picker-list">
+        <view
+          class="picker-item {{item.id === categoryId ? 'picker-item-active' : ''}}"
+          wx:for="{{categories}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          data-name="{{item.name}}"
+          bindtap="onSelectCategory"
+        >
+          <text>{{item.name}}</text>
+          <text class="check-icon" wx:if="{{item.id === categoryId}}">&#10003;</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- Loading state -->
+  <view class="loading-center" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading}}">
+    <!-- Today Stats Card -->
+    <view class="stats-card card">
+      <view class="section-title">今日学习</view>
+      <view class="stats-row">
+        <view class="stats-item">
+          <text class="stats-number">{{todayCount}}</text>
+          <text class="stats-label">已答题数</text>
+        </view>
+        <view class="stats-divider"></view>
+        <view class="stats-item">
+          <text class="stats-number">{{todayAccuracy}}%</text>
+          <text class="stats-label">正确率</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Feature Grid -->
+    <view class="feature-grid">
+      <view class="feature-card card" bindtap="goToChapterPractice">
+        <view class="feature-icon icon-chapter">&#128218;</view>
+        <text class="feature-name">章节练习</text>
+        <text class="feature-desc">按章节逐步学习</text>
+      </view>
+      <view class="feature-card card" bindtap="goToRandomPractice">
+        <view class="feature-icon icon-random">&#127922;</view>
+        <text class="feature-name">随机练习</text>
+        <text class="feature-desc">随机抽取20题</text>
+      </view>
+      <view class="feature-card card" bindtap="goToMockExam">
+        <view class="feature-icon icon-mock">&#128221;</view>
+        <text class="feature-name">模拟考试</text>
+        <text class="feature-desc">模拟真实考试</text>
+      </view>
+      <view class="feature-card card" bindtap="goToWrongBook">
+        <view class="feature-icon icon-wrong">&#128211;</view>
+        <text class="feature-name">错题本</text>
+        <text class="feature-desc">巩固薄弱知识</text>
+      </view>
+    </view>
+
+    <!-- Overall Progress -->
+    <view class="progress-card card" wx:if="{{categoryId}}">
+      <view class="section-title">学习进度</view>
+      <view class="progress-info">
+        <text class="progress-text">已完成 {{answeredQuestions}}/{{totalQuestions}} 题</text>
+        <text class="progress-percent">{{progressPercent}}%</text>
+      </view>
+      <view class="progress-bar">
+        <view class="progress-bar-fill" style="width: {{progressPercent}}%;"></view>
+      </view>
+    </view>
+
+    <!-- Prompt to select category -->
+    <view class="empty-state" wx:if="{{!categoryId}}">
+      <view class="empty-icon">&#128204;</view>
+      <text class="empty-text">请先选择考试分类开始学习</text>
+    </view>
+  </block>
+</view>

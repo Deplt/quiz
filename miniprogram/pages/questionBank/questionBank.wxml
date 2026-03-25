@@ -1,0 +1,52 @@
+<view class="container">
+  <!-- Category Picker -->
+  <view class="category-picker-wrap card" wx:if="{{categories.length > 0}}">
+    <text class="picker-label">考试分类</text>
+    <picker
+      mode="selector"
+      range="{{categories}}"
+      range-key="name"
+      value="{{categoryIndex}}"
+      bindchange="onCategoryChange"
+    >
+      <view class="picker-value">
+        <text class="picker-text">{{categoryName || '请选择'}}</text>
+        <text class="picker-arrow">&#9662;</text>
+      </view>
+    </picker>
+  </view>
+
+  <!-- Loading -->
+  <view class="loading-center" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- Empty state -->
+  <view class="empty-state" wx:if="{{!loading && isEmpty}}">
+    <view class="empty-icon">&#128218;</view>
+    <text class="empty-text">暂无章节数据</text>
+  </view>
+
+  <!-- Chapter List -->
+  <view class="chapter-list" wx:if="{{!loading && !isEmpty}}">
+    <view class="section-title">章节列表</view>
+    <view
+      class="chapter-item card"
+      wx:for="{{chapters}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onChapterTap"
+    >
+      <view class="chapter-header">
+        <text class="chapter-name">{{item.name}}</text>
+        <text class="chapter-count">{{item.answeredQuestions}}/{{item.totalQuestions}}题</text>
+      </view>
+      <view class="chapter-progress">
+        <view class="progress-bar">
+          <view class="progress-bar-fill" style="width: {{item.progressPercent}}%;"></view>
+        </view>
+        <text class="chapter-percent">{{item.progressPercent}}%</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,92 @@
+<view class="container">
+  <!-- 分类筛选 -->
+  <view class="filter-bar card">
+    <picker
+      mode="selector"
+      range="{{categories}}"
+      range-key="name"
+      value="{{categoryIndex}}"
+      bindchange="onCategoryChange"
+    >
+      <view class="filter-picker">
+        <text class="filter-label">分类筛选</text>
+        <view class="filter-value">
+          <text>{{categories[categoryIndex].name || '请选择分类'}}</text>
+          <text class="arrow-down"></text>
+        </view>
+      </view>
+    </picker>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-center" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:elif="{{isEmpty}}">
+    <view class="empty-icon-wrap">
+      <text class="empty-check-icon">&#10004;</text>
+    </view>
+    <view class="empty-text">暂无错题</view>
+    <view class="empty-sub-text text-secondary">继续加油，保持正确率！</view>
+  </view>
+
+  <!-- 错题列表 -->
+  <block wx:else>
+    <view
+      class="wrong-item card"
+      wx:for="{{wrongList}}"
+      wx:key="index"
+    >
+      <!-- 题目头部 -->
+      <view class="wrong-item-header">
+        <view class="type-tag type-tag-{{item.question_type}}">{{item.typeLabel}}</view>
+        <view class="wrong-count">
+          <text class="wrong-count-num">{{item.wrong_count || item.wrongCount || 1}}</text>
+          <text class="wrong-count-label">次错误</text>
+        </view>
+      </view>
+
+      <!-- 题目摘要 -->
+      <view class="wrong-item-content">
+        <text>{{item.summary}}</text>
+      </view>
+
+      <!-- 解析区域 -->
+      <view class="analysis-section" wx:if="{{item.showAnalysis}}">
+        <view class="analysis-title">解析</view>
+        <view class="analysis-content">{{item.analysis || item.explanation || '暂无解析'}}</view>
+        <view class="analysis-answer" wx:if="{{item.correct_answer || item.correctAnswer}}">
+          <text class="analysis-answer-label">正确答案：</text>
+          <text class="analysis-answer-value">{{item.correct_answer || item.correctAnswer}}</text>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="wrong-item-actions">
+        <view class="action-btn action-btn-analysis" bindtap="toggleAnalysis" data-index="{{index}}">
+          <text>{{item.showAnalysis ? '收起解析' : '查看解析'}}</text>
+        </view>
+        <view class="action-btn action-btn-master" bindtap="markMastered" data-index="{{index}}">
+          <text>标记已掌握</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="loading-more" wx:if="{{loadingMore}}">
+      <text class="text-secondary">加载更多...</text>
+    </view>
+    <view class="loading-more" wx:elif="{{!hasMore && wrongList.length > 0}}">
+      <text class="text-secondary">-- 没有更多了 --</text>
+    </view>
+  </block>
+
+  <!-- 底部错题重练按钮 -->
+  <view class="bottom-bar" wx:if="{{!isEmpty && !loading}}">
+    <button class="btn-primary practice-btn" bindtap="startWrongPractice">
+      错题重练 ({{wrongList.length}}题)
+    </button>
+  </view>
+</view>

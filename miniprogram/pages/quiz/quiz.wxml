@@ -1,0 +1,267 @@
+<wxs module="tools">
+function isAnswered(userAnswers, qid) {
+  return userAnswers[qid] && userAnswers[qid].submitted;
+}
+
+function getAnswer(userAnswers, qid) {
+  return userAnswers[qid] ? userAnswers[qid].answer : null;
+}
+
+function isCorrect(userAnswers, qid) {
+  return userAnswers[qid] ? userAnswers[qid].isCorrect : null;
+}
+
+function hasRecord(userAnswers, qid) {
+  return !!userAnswers[qid];
+}
+
+function inArray(arr, val) {
+  if (!arr) return false;
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] === val) return true;
+  }
+  return false;
+}
+
+function parseOptions(optionsJson) {
+  if (!optionsJson) return [];
+  if (typeof optionsJson === 'string') {
+    return JSON.parse(optionsJson);
+  }
+  return optionsJson;
+}
+
+function getTypeLabel(type) {
+  var map = {
+    'single_choice': '单选题',
+    'multi_choice': '多选题',
+    'true_false': '判断题',
+    'fill_blank': '填空题'
+  };
+  return map[type] || '未知';
+}
+
+function getTypeTag(type) {
+  var map = {
+    'single_choice': 'single',
+    'multi_choice': 'multi',
+    'true_false': 'judge',
+    'fill_blank': 'fill'
+  };
+  return map[type] || '';
+}
+
+function optionStateClass(label, userAnswers, qid, correctAnswer, mode) {
+  if (mode === 'mock_exam') {
+    var rec = userAnswers[qid];
+    if (!rec) return '';
+    var ans = rec.answer;
+    if (typeof ans === 'string' && ans === label) return 'selected';
+    if (ans && ans.constructor === Array) {
+      for (var i = 0; i < ans.length; i++) {
+        if (ans[i] === label) return 'selected';
+      }
+    }
+    return '';
+  }
+
+  var record = userAnswers[qid];
+  if (!record) return '';
+  if (!record.submitted) {
+    var a = record.answer;
+    if (typeof a === 'string' && a === label) return 'selected';
+    return '';
+  }
+
+  var userAns = record.answer;
+  var correct = record.isCorrect;
+  var isUserPick = false;
+
+  if (typeof userAns === 'string') {
+    isUserPick = (userAns === label);
+  } else if (userAns && userAns.constructor === Array) {
+    for (var j = 0; j < userAns.length; j++) {
+      if (userAns[j] === label) { isUserPick = true; break; }
+    }
+  }
+
+  // check if this label is in the correct answer
+  var isCorrectOption = false;
+  if (correctAnswer) {
+    var parts = correctAnswer.split(',');
+    for (var k = 0; k < parts.length; k++) {
+      if (parts[k] === label) { isCorrectOption = true; break; }
+    }
+  }
+
+  if (correct) {
+    // user got it right
+    return isUserPick ? 'correct' : '';
+  } else {
+    // user got it wrong
+    if (isUserPick && !isCorrectOption) return 'wrong';
+    if (isCorrectOption) return 'correct';
+    return '';
+  }
+}
+
+function tfStateClass(value, userAnswers, qid, correctAnswer, mode) {
+  return optionStateClass(value, userAnswers, qid, correctAnswer, mode);
+}
+
+module.exports = {
+  isAnswered: isAnswered,
+  getAnswer: getAnswer,
+  isCorrect: isCorrect,
+  hasRecord: hasRecord,
+  inArray: inArray,
+  parseOptions: parseOptions,
+  getTypeLabel: getTypeLabel,
+  getTypeTag: getTypeTag,
+  optionStateClass: optionStateClass,
+  tfStateClass: tfStateClass
+};
+</wxs>
+
+<view class="quiz-page" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd">
+  <!-- Top status bar -->
+  <view class="status-bar">
+    <view class="progress-info">
+      <text class="progress-current">{{currentIndex + 1}}</text>
+      <text class="progress-divider">/</text>
+      <text class="progress-total">{{questions.length}}</text>
+    </view>
+    <view class="progress-bar">
+      <view class="progress-bar-fill" style="width: {{(currentIndex + 1) / questions.length * 100}}%"></view>
+    </view>
+    <view wx:if="{{mode === 'mock_exam'}}" class="timer">
+      <text class="timer-icon">&#x23F1;</text>
+      <text class="timer-text {{remainingSeconds <= 60 ? 'timer-warning' : ''}}">{{timerText}}</text>
+    </view>
+  </view>
+
+  <!-- Question area -->
+  <view class="question-area" wx:if="{{currentQuestion}}">
+    <!-- Question header -->
+    <view class="question-header">
+      <text class="question-index">第 {{currentIndex + 1}} 题</text>
+      <text class="question-type tag-{{tools.getTypeTag(currentQuestion.type)}}">{{tools.getTypeLabel(currentQuestion.type)}}</text>
+    </view>
+
+    <!-- Question content -->
+    <view class="question-content">
+      <text>{{currentQuestion.content}}</text>
+    </view>
+
+    <!-- Single choice options -->
+    <view wx:if="{{currentQuestion.type === 'single_choice'}}" class="options-list">
+      <view
+        wx:for="{{tools.parseOptions(currentQuestion.options_json)}}"
+        wx:key="label"
+        class="option-item {{tools.optionStateClass(item.label, userAnswers, currentQuestion.id, currentQuestion.answer, mode)}}"
+        data-value="{{item.label}}"
+        bindtap="onSelectOption"
+      >
+        <view class="option-label">{{item.label}}</view>
+        <view class="option-text">{{item.text}}</view>
+        <view class="option-icon" wx:if="{{tools.optionStateClass(item.label, userAnswers, currentQuestion.id, currentQuestion.answer, mode) === 'correct'}}">&#x2713;</view>
+        <view class="option-icon wrong-icon" wx:if="{{tools.optionStateClass(item.label, userAnswers, currentQuestion.id, currentQuestion.answer, mode) === 'wrong'}}">&#x2717;</view>
+      </view>
+    </view>
+
+    <!-- Multi choice options -->
+    <view wx:if="{{currentQuestion.type === 'multi_choice'}}" class="options-list">
+      <view
+        wx:for="{{tools.parseOptions(currentQuestion.options_json)}}"
+        wx:key="label"
+        class="option-item multi {{tools.optionStateClass(item.label, userAnswers, currentQuestion.id, currentQuestion.answer, mode)}} {{tools.inArray(selectedOptions, item.label) ? 'selected' : ''}}"
+        data-value="{{item.label}}"
+        bindtap="onToggleOption"
+      >
+        <view class="option-checkbox {{tools.inArray(selectedOptions, item.label) ? 'checked' : ''}}">
+          <text wx:if="{{tools.inArray(selectedOptions, item.label)}}">&#x2713;</text>
+        </view>
+        <view class="option-label">{{item.label}}</view>
+        <view class="option-text">{{item.text}}</view>
+        <view class="option-icon" wx:if="{{tools.optionStateClass(item.label, userAnswers, currentQuestion.id, currentQuestion.answer, mode) === 'correct'}}">&#x2713;</view>
+        <view class="option-icon wrong-icon" wx:if="{{tools.optionStateClass(item.label, userAnswers, currentQuestion.id, currentQuestion.answer, mode) === 'wrong'}}">&#x2717;</view>
+      </view>
+      <view class="confirm-btn-wrap" wx:if="{{!tools.isAnswered(userAnswers, currentQuestion.id) || mode === 'mock_exam'}}">
+        <button class="btn-primary confirm-multi-btn" bindtap="onConfirmMulti">确认选择</button>
+      </view>
+    </view>
+
+    <!-- True/false options -->
+    <view wx:if="{{currentQuestion.type === 'true_false'}}" class="tf-options">
+      <view
+        class="tf-btn tf-correct {{tools.tfStateClass('TRUE', userAnswers, currentQuestion.id, currentQuestion.answer, mode)}}"
+        data-value="TRUE"
+        bindtap="onSelectOption"
+      >
+        <text class="tf-icon">&#x25CB;</text>
+        <text>正确</text>
+      </view>
+      <view
+        class="tf-btn tf-wrong {{tools.tfStateClass('FALSE', userAnswers, currentQuestion.id, currentQuestion.answer, mode)}}"
+        data-value="FALSE"
+        bindtap="onSelectOption"
+      >
+        <text class="tf-icon">&#x2717;</text>
+        <text>错误</text>
+      </view>
+    </view>
+
+    <!-- Fill blank -->
+    <view wx:if="{{currentQuestion.type === 'fill_blank'}}" class="fill-area">
+      <input
+        class="fill-input"
+        placeholder="请输入答案"
+        value="{{fillAnswer}}"
+        bindinput="onFillInput"
+        disabled="{{tools.isAnswered(userAnswers, currentQuestion.id) && mode !== 'mock_exam'}}"
+      />
+      <button
+        class="btn-primary confirm-fill-btn"
+        bindtap="onConfirmFill"
+        wx:if="{{!tools.isAnswered(userAnswers, currentQuestion.id) || mode === 'mock_exam'}}"
+      >提交答案</button>
+    </view>
+
+    <!-- Explanation (practice mode only, wrong answer) -->
+    <view
+      class="explanation-card"
+      wx:if="{{showExplanation && mode !== 'mock_exam' && tools.isAnswered(userAnswers, currentQuestion.id) && !tools.isCorrect(userAnswers, currentQuestion.id)}}"
+    >
+      <view class="explanation-header">
+        <text class="explanation-title">答案解析</text>
+        <text class="correct-answer">正确答案: {{currentQuestion.answer}}</text>
+      </view>
+      <view class="explanation-body">
+        <text>{{currentQuestion.explanation || '暂无解析'}}</text>
+      </view>
+    </view>
+
+    <!-- Correct feedback -->
+    <view
+      class="result-feedback correct-feedback"
+      wx:if="{{mode !== 'mock_exam' && tools.isAnswered(userAnswers, currentQuestion.id) && tools.isCorrect(userAnswers, currentQuestion.id)}}"
+    >
+      <text class="feedback-icon">&#x2713;</text>
+      <text class="feedback-text">回答正确!</text>
+    </view>
+  </view>
+
+  <!-- Bottom action bar -->
+  <view class="bottom-bar">
+    <button
+      class="nav-btn prev-btn {{currentIndex <= 0 ? 'disabled' : ''}}"
+      disabled="{{currentIndex <= 0}}"
+      bindtap="onPrev"
+    >上一题</button>
+    <view class="bottom-divider"></view>
+    <button
+      class="nav-btn next-btn"
+      bindtap="onNext"
+    >{{currentIndex >= questions.length - 1 ? (mode === 'mock_exam' ? '交卷' : '完成') : '下一题'}}</button>
+  </view>
+</view>

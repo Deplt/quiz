@@ -1,0 +1,90 @@
+<view class="page-my">
+  <!-- 顶部用户信息区 -->
+  <view class="user-header">
+    <view class="user-info-row">
+      <image
+        class="avatar"
+        src="{{userInfo.avatarUrl || userInfo.avatar_url || '/images/default-avatar.png'}}"
+        mode="aspectFill"
+      />
+      <view class="user-detail">
+        <text class="nickname">{{userInfo.nickName || userInfo.nickname || '学习者'}}</text>
+        <view class="phone-row" wx:if="{{phoneBound}}">
+          <text class="phone-text">{{maskedPhone}}</text>
+        </view>
+        <button
+          wx:else
+          class="bind-phone-btn"
+          open-type="getPhoneNumber"
+          bindgetphonenumber="getPhoneNumber"
+        >
+          绑定手机号
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <view class="container">
+    <!-- 学习统计卡片 -->
+    <view class="stats-card card">
+      <view class="stats-grid">
+        <view class="stats-item">
+          <text class="stats-num">{{stats.totalQuestions}}</text>
+          <text class="stats-label">总答题数</text>
+        </view>
+        <view class="stats-divider"></view>
+        <view class="stats-item">
+          <text class="stats-num">{{stats.accuracy}}</text>
+          <text class="stats-label">正确率</text>
+        </view>
+        <view class="stats-divider"></view>
+        <view class="stats-item">
+          <text class="stats-num">{{stats.continuousDays}}</text>
+          <text class="stats-label">连续学习天数</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 当前分类 -->
+    <view class="category-card card">
+      <view class="category-row">
+        <view class="category-left">
+          <text class="category-label">当前考试分类</text>
+          <text class="category-name">{{currentCategoryName}}</text>
+        </view>
+        <picker
+          mode="selector"
+          range="{{categories}}"
+          range-key="name"
+          value="{{categoryIndex}}"
+          bindchange="onCategoryChange"
+        >
+          <view class="switch-btn">切换</view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- 功能列表 -->
+    <view class="menu-card card">
+      <view class="menu-cell" bindtap="goToStats">
+        <view class="menu-cell-left">
+          <view class="menu-icon menu-icon-stats">
+            <text class="icon-text">&#128202;</text>
+          </view>
+          <text class="menu-cell-title">学习统计</text>
+        </view>
+        <text class="menu-arrow">></text>
+      </view>
+      <view class="menu-divider"></view>
+      <view class="menu-cell" bindtap="showAbout">
+        <view class="menu-cell-left">
+          <view class="menu-icon menu-icon-about">
+            <text class="icon-text">&#8505;</text>
+          </view>
+          <text class="menu-cell-title">关于</text>
+        </view>
+        <text class="menu-arrow">></text>
+      </view>
+    </view>
+  </view>
+</view>

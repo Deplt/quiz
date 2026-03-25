@@ -1,7 +1,7 @@
 const { Question } = require('../../models');
 
 async function listQuestions(filters, { offset, limit }) {
-  const where = {};
+  const where = { status: 'active' };
   if (filters.exam_category_id) where.exam_category_id = filters.exam_category_id;
   if (filters.chapter_id) where.chapter_id = filters.chapter_id;
   if (filters.type) where.type = filters.type;

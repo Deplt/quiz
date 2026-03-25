@@ -1,0 +1,82 @@
+<view class="result-page">
+  <!-- Score hero section -->
+  <view class="score-hero">
+    <view class="score-ring-wrap">
+      <view class="score-ring">
+        <!-- Circular progress implemented with conic-gradient via inline style -->
+        <view
+          class="ring-bg"
+          style="background: conic-gradient(#fff {{scoreAngle}}deg, rgba(255,255,255,0.25) {{scoreAngle}}deg);"
+        ></view>
+        <view class="ring-center">
+          <text class="score-number">{{accuracy}}</text>
+          <text class="score-unit">%</text>
+        </view>
+      </view>
+      <text class="score-label">正确率</text>
+    </view>
+  </view>
+
+  <!-- Stats cards -->
+  <view class="stats-row">
+    <view class="stat-card">
+      <text class="stat-value">{{total}}</text>
+      <text class="stat-name">总题数</text>
+    </view>
+    <view class="stat-card stat-correct">
+      <text class="stat-value correct-color">{{correct}}</text>
+      <text class="stat-name">正确</text>
+    </view>
+    <view class="stat-card stat-wrong">
+      <text class="stat-value wrong-color">{{wrong}}</text>
+      <text class="stat-name">错误</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{durationText}}</text>
+      <text class="stat-name">用时</text>
+    </view>
+  </view>
+
+  <!-- Wrong questions list -->
+  <view class="wrong-section" wx:if="{{wrongQuestions.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">错题列表</text>
+      <text class="section-count">共 {{wrongQuestions.length}} 题</text>
+    </view>
+
+    <view class="wrong-list">
+      <view class="wrong-item card" wx:for="{{wrongQuestions}}" wx:key="id">
+        <view class="wrong-question-content">
+          <text class="wrong-index">{{index + 1}}.</text>
+          <text class="wrong-text">{{item.content}}</text>
+        </view>
+        <view class="wrong-answers">
+          <view class="answer-row">
+            <text class="answer-label wrong-label">你的答案</text>
+            <text class="answer-value wrong-value">{{item.user_answer || '未作答'}}</text>
+          </view>
+          <view class="answer-row">
+            <text class="answer-label correct-label">正确答案</text>
+            <text class="answer-value correct-value">{{item.correct_answer || item.answer}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- All correct -->
+  <view class="all-correct" wx:if="{{wrongQuestions.length === 0 && total > 0}}">
+    <text class="all-correct-icon">&#x2605;</text>
+    <text class="all-correct-text">全部答对，太棒了!</text>
+  </view>
+
+  <!-- Bottom buttons -->
+  <view class="bottom-actions">
+    <button class="btn-secondary action-btn" bindtap="onRetryWrong" wx:if="{{wrongQuestions.length > 0}}">
+      错题重练
+    </button>
+    <button class="btn-primary action-btn" bindtap="onGoHome">
+      返回首页
+    </button>
+  </view>
+</view>

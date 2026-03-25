@@ -1,0 +1,208 @@
+/* 分类筛选栏 */
+.filter-bar {
+  margin-bottom: 20rpx;
+}
+
+.filter-picker {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.filter-value {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  color: #4F7CFF;
+  font-weight: 500;
+}
+
+.arrow-down {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 10rpx;
+  border-left: 10rpx solid transparent;
+  border-right: 10rpx solid transparent;
+  border-top: 12rpx solid #4F7CFF;
+}
+
+/* 空状态 */
+.empty-icon-wrap {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: #e8f5e9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 30rpx;
+}
+
+.empty-check-icon {
+  font-size: 60rpx;
+  color: #4caf50;
+}
+
+.empty-sub-text {
+  margin-top: 12rpx;
+}
+
+/* 错题项 */
+.wrong-item {
+  padding: 28rpx;
+}
+
+.wrong-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.type-tag {
+  display: inline-block;
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 6rpx;
+  font-weight: 500;
+}
+
+.type-tag-single_choice {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.type-tag-multi_choice {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.type-tag-true_false {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.type-tag-fill_blank {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.wrong-count {
+  display: flex;
+  align-items: baseline;
+}
+
+.wrong-count-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ff5757;
+  margin-right: 4rpx;
+}
+
+.wrong-count-label {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.wrong-item-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 20rpx;
+}
+
+/* 解析区域 */
+.analysis-section {
+  background: #f8f9fc;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  border-left: 6rpx solid #4F7CFF;
+}
+
+.analysis-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #4F7CFF;
+  margin-bottom: 12rpx;
+}
+
+.analysis-content {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.7;
+}
+
+.analysis-answer {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+}
+
+.analysis-answer-label {
+  color: #999;
+}
+
+.analysis-answer-value {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+/* 操作按钮 */
+.wrong-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.action-btn {
+  font-size: 24rpx;
+  padding: 10rpx 28rpx;
+  border-radius: 30rpx;
+  font-weight: 500;
+}
+
+.action-btn-analysis {
+  background: #f0f4ff;
+  color: #4F7CFF;
+}
+
+.action-btn-master {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* 加载更多 */
+.loading-more {
+  text-align: center;
+  padding: 30rpx 0 140rpx;
+}
+
+/* 底部操作栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 40rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.practice-btn {
+  width: 100%;
+}
+
+/* 给列表底部留出空间 */
+.container {
+  padding-bottom: 160rpx;
+}
