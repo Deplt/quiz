@@ -35,20 +35,17 @@ function ChaptersPage() {
   const loadChapters = useCallback(async () => {
     setLoadError('');
     setIsLoading(true);
-
     try {
       const data = await getCategoryChapters(categoryId);
       setChapters(normalizeLoadedChapters(Array.isArray(data) ? data : []));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to load chapters');
+      setLoadError(error instanceof Error ? error.message : '加载章节失败');
     } finally {
       setIsLoading(false);
     }
   }, [categoryId]);
 
-  useEffect(() => {
-    loadChapters();
-  }, [loadChapters]);
+  useEffect(() => { loadChapters(); }, [loadChapters]);
 
   function handleOpenCreateModal() {
     setEditingChapter(null);
@@ -63,10 +60,7 @@ function ChaptersPage() {
   }
 
   function handleCloseModal() {
-    if (isSaving) {
-      return;
-    }
-
+    if (isSaving) return;
     setFormError('');
     setEditingChapter(null);
     setIsModalOpen(false);
@@ -75,7 +69,6 @@ function ChaptersPage() {
   async function handleSubmitChapter(payload) {
     setFormError('');
     setIsSaving(true);
-
     try {
       if (editingChapter) {
         await updateChapter(editingChapter.id, payload);
@@ -88,7 +81,7 @@ function ChaptersPage() {
         setIsModalOpen(false);
       }
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Failed to save chapter');
+      setFormError(error instanceof Error ? error.message : '保存失败');
     } finally {
       setIsSaving(false);
     }
@@ -100,28 +93,21 @@ function ChaptersPage() {
   }
 
   function handleCloseArchiveDialog() {
-    if (isArchiving) {
-      return;
-    }
-
+    if (isArchiving) return;
     setArchiveError('');
     setArchivingChapter(null);
   }
 
   async function handleConfirmArchive() {
-    if (!archivingChapter) {
-      return;
-    }
-
+    if (!archivingChapter) return;
     setArchiveError('');
     setIsArchiving(true);
-
     try {
       await archiveChapter(archivingChapter.id);
       setArchivingChapter(null);
       await loadChapters();
     } catch (error) {
-      setArchiveError(error instanceof Error ? error.message : 'Failed to archive chapter');
+      setArchiveError(error instanceof Error ? error.message : '归档失败');
     } finally {
       setIsArchiving(false);
     }
@@ -131,34 +117,31 @@ function ChaptersPage() {
 
   return (
     <section className="stack gap-md">
-      <div className="stack gap-sm">
-        <Link className="button button-secondary" to="/categories">Back to categories</Link>
-        <span className="pill">Category {categoryId}</span>
+      <div className="inline-stack gap-sm">
+        <Link className="btn btn-text" to="/categories">← 返回分类列表</Link>
+        <span className="pill">分类 ID: {categoryId}</span>
       </div>
 
       <PageHeader
-        title="Chapters"
-        subtitle="Manage chapters for the selected category."
-        action={{
-          label: 'Add chapter',
-          onClick: handleOpenCreateModal,
-        }}
+        title="章节管理"
+        subtitle="管理当前分类下的章节"
+        action={{ label: '新增章节', onClick: handleOpenCreateModal }}
       />
 
       {loadError ? <p className="error-banner" role="alert">{loadError}</p> : null}
 
       <div className="table-card table-scroll">
         {isLoading ? (
-          <p>Loading chapters...</p>
+          <p className="page-loading">加载中...</p>
         ) : chapters.length === 0 ? (
-          <div className="empty-state">No chapters yet.</div>
+          <div className="empty-state">暂无章节</div>
         ) : (
           <table>
             <thead>
               <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Sort order</th>
-                <th scope="col">Actions</th>
+                <th>名称</th>
+                <th>排序</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -168,24 +151,8 @@ function ChaptersPage() {
                   <td>{chapter.sort_order}</td>
                   <td>
                     <div className="table-actions">
-                      <button
-                        className="button button-secondary"
-                        type="button"
-                        aria-label={`Edit ${chapter.name}`}
-                        onClick={() => handleOpenEditModal(chapter)}
-                        disabled={isSaving || isArchiving}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="button button-danger"
-                        type="button"
-                        aria-label={`Archive ${chapter.name}`}
-                        onClick={() => handleOpenArchiveDialog(chapter)}
-                        disabled={isSaving || isArchiving}
-                      >
-                        Archive
-                      </button>
+                      <button className="btn btn-text" type="button" onClick={() => handleOpenEditModal(chapter)} disabled={isSaving || isArchiving}>编辑</button>
+                      <button className="btn btn-text btn-text--danger" type="button" onClick={() => handleOpenArchiveDialog(chapter)} disabled={isSaving || isArchiving}>归档</button>
                     </div>
                   </td>
                 </tr>
@@ -200,19 +167,19 @@ function ChaptersPage() {
         onClose={handleCloseModal}
         onSubmit={handleSubmitChapter}
         initialValues={editingChapter ?? { exam_category_id: numericCategoryId, sort_order: chapters.length + 1 }}
-        title={isEditing ? 'Edit chapter' : 'Add chapter'}
-        subtitle={isEditing ? 'Update the selected chapter.' : 'Create a new chapter for the selected category.'}
-        submitLabel={isEditing ? 'Save changes' : 'Create chapter'}
-        submittingLabel={isEditing ? 'Saving changes...' : 'Creating chapter...'}
+        title={isEditing ? '编辑章节' : '新增章节'}
+        subtitle={isEditing ? '修改章节信息' : '为当前分类创建新章节'}
+        submitLabel={isEditing ? '保存' : '创建'}
+        submittingLabel={isEditing ? '保存中...' : '创建中...'}
         isSubmitting={isSaving}
         error={formError}
       />
 
       <ConfirmDialog
         open={Boolean(archivingChapter)}
-        title="Archive chapter"
-        message={archivingChapter ? `Archive ${archivingChapter.name}? This removes it from the active chapter list.` : ''}
-        confirmLabel={isArchiving ? 'Archiving chapter...' : 'Archive chapter'}
+        title="归档章节"
+        message={archivingChapter ? `确定归档「${archivingChapter.name}」？归档后将不再显示在列表中。` : ''}
+        confirmLabel={isArchiving ? '归档中...' : '确认归档'}
         isSubmitting={isArchiving}
         error={archiveError}
         onConfirm={handleConfirmArchive}

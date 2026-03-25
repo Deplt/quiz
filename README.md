@@ -29,7 +29,7 @@
 | 模块 | 目录 | 技术栈 |
 |------|------|--------|
 | 微信小程序 | `miniprogram/` | 微信原生（WXML + WXSS + JS） |
-| 管理后台 | `webadmin/` | Vue 3 + Element Plus |
+| 管理后台 | `admin-web/` | React 19 + React Router + Vite |
 | API 服务 | `server/` | Node.js + Express + Sequelize + MySQL |
 
 ## 功能特性
@@ -98,10 +98,29 @@ npm run dev
 2. 修改 `utils/api.js` 中的 API 地址指向本地后端服务
 3. 编译运行
 
+### 管理后台
+
+```bash
+cd admin-web
+
+# 安装依赖
+npm install
+
+# 启动开发服务
+npm run dev
+```
+
+默认运行在 `http://localhost:5173`，需要后端服务同时运行。
+
 ### 测试
 
 ```bash
+# 后端测试
 cd server
+npm test
+
+# 管理后台测试
+cd admin-web
 npm test
 ```
 
@@ -151,7 +170,14 @@ quiz/
 │   │   └── my/              # 我的
 │   ├── utils/               # 工具函数（API 请求、认证）
 │   └── images/              # 图标资源
-├── webadmin/                # 管理后台（Vue 3）
+├── admin-web/               # 管理后台（React 19 + Vite）
+│   ├── src/
+│   │   ├── api/             # API 请求封装
+│   │   ├── auth/            # 认证上下文、路由守卫
+│   │   ├── components/      # 通用组件（表单弹窗等）
+│   │   ├── layouts/         # 布局组件
+│   │   ├── pages/           # 页面组件
+│   │   └── router/          # 路由配置
 └── docs/                    # 设计文档
 ```
 

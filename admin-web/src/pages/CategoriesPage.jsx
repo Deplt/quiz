@@ -37,20 +37,17 @@ function CategoriesPage() {
   async function loadCategories() {
     setLoadError('');
     setIsLoading(true);
-
     try {
       const data = await getCategories();
       setCategories(normalizeLoadedCategories(Array.isArray(data) ? data : []));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to load categories');
+      setLoadError(error instanceof Error ? error.message : '加载分类失败');
     } finally {
       setIsLoading(false);
     }
   }
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  useEffect(() => { loadCategories(); }, []);
 
   function handleOpenCreateModal() {
     setEditingCategory(null);
@@ -65,10 +62,7 @@ function CategoriesPage() {
   }
 
   function handleCloseModal() {
-    if (isSaving) {
-      return;
-    }
-
+    if (isSaving) return;
     setFormError('');
     setEditingCategory(null);
     setIsModalOpen(false);
@@ -77,22 +71,20 @@ function CategoriesPage() {
   async function handleSubmitCategory(payload) {
     setFormError('');
     setIsSaving(true);
-
     try {
       if (editingCategory) {
         const updatedCategory = await updateCategory(editingCategory.id, payload);
         setCategories((current) => sortCategories(
-          current.map((category) => (category.id === updatedCategory.id ? updatedCategory : category)),
+          current.map((c) => (c.id === updatedCategory.id ? updatedCategory : c)),
         ));
       } else {
         const createdCategory = await createCategory(payload);
         setCategories((current) => sortCategories([...current, createdCategory]));
       }
-
       setEditingCategory(null);
       setIsModalOpen(false);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Failed to save category');
+      setFormError(error instanceof Error ? error.message : '保存失败');
     } finally {
       setIsSaving(false);
     }
@@ -104,28 +96,21 @@ function CategoriesPage() {
   }
 
   function handleCloseArchiveDialog() {
-    if (isArchiving) {
-      return;
-    }
-
+    if (isArchiving) return;
     setArchiveError('');
     setArchivingCategory(null);
   }
 
   async function handleConfirmArchive() {
-    if (!archivingCategory) {
-      return;
-    }
-
+    if (!archivingCategory) return;
     setArchiveError('');
     setIsArchiving(true);
-
     try {
       await archiveCategory(archivingCategory.id);
       setArchivingCategory(null);
       await loadCategories();
     } catch (error) {
-      setArchiveError(error instanceof Error ? error.message : 'Failed to archive category');
+      setArchiveError(error instanceof Error ? error.message : '归档失败');
     } finally {
       setIsArchiving(false);
     }
@@ -136,29 +121,26 @@ function CategoriesPage() {
   return (
     <section className="stack gap-md">
       <PageHeader
-        title="Categories"
-        subtitle="Manage quiz categories."
-        action={{
-          label: 'Add category',
-          onClick: handleOpenCreateModal,
-        }}
+        title="考试分类"
+        subtitle="管理考试科目分类"
+        action={{ label: '新增分类', onClick: handleOpenCreateModal }}
       />
 
       {loadError ? <p className="error-banner" role="alert">{loadError}</p> : null}
 
       <div className="table-card table-scroll">
         {isLoading ? (
-          <p>Loading categories...</p>
+          <p className="page-loading">加载中...</p>
         ) : categories.length === 0 ? (
-          <div className="empty-state">No categories yet.</div>
+          <div className="empty-state">暂无分类</div>
         ) : (
           <table>
             <thead>
               <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Icon</th>
-                <th scope="col">Sort order</th>
-                <th scope="col">Actions</th>
+                <th>名称</th>
+                <th>图标</th>
+                <th>排序</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -169,31 +151,9 @@ function CategoriesPage() {
                   <td>{category.sort_order}</td>
                   <td>
                     <div className="table-actions">
-                      <Link
-                        className="button button-secondary"
-                        aria-label={`View chapters for ${category.name}`}
-                        to={`/categories/${category.id}/chapters`}
-                      >
-                        Chapters
-                      </Link>
-                      <button
-                        className="button button-secondary"
-                        type="button"
-                        aria-label={`Edit ${category.name}`}
-                        onClick={() => handleOpenEditModal(category)}
-                        disabled={isSaving || isArchiving}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="button button-danger"
-                        type="button"
-                        aria-label={`Archive ${category.name}`}
-                        onClick={() => handleOpenArchiveDialog(category)}
-                        disabled={isSaving || isArchiving}
-                      >
-                        Archive
-                      </button>
+                      <Link className="btn btn-text" to={`/categories/${category.id}/chapters`}>章节</Link>
+                      <button className="btn btn-text" type="button" onClick={() => handleOpenEditModal(category)} disabled={isSaving || isArchiving}>编辑</button>
+                      <button className="btn btn-text btn-text--danger" type="button" onClick={() => handleOpenArchiveDialog(category)} disabled={isSaving || isArchiving}>归档</button>
                     </div>
                   </td>
                 </tr>
@@ -208,19 +168,19 @@ function CategoriesPage() {
         onClose={handleCloseModal}
         onSubmit={handleSubmitCategory}
         initialValues={editingCategory}
-        title={isEditing ? 'Edit category' : 'Add category'}
-        subtitle={isEditing ? 'Update the selected quiz category.' : 'Create a new quiz category.'}
-        submitLabel={isEditing ? 'Save changes' : 'Create category'}
-        submittingLabel={isEditing ? 'Saving changes...' : 'Creating category...'}
+        title={isEditing ? '编辑分类' : '新增分类'}
+        subtitle={isEditing ? '修改考试分类信息' : '创建新的考试分类'}
+        submitLabel={isEditing ? '保存' : '创建'}
+        submittingLabel={isEditing ? '保存中...' : '创建中...'}
         isSubmitting={isSaving}
         error={formError}
       />
 
       <ConfirmDialog
         open={Boolean(archivingCategory)}
-        title="Archive category"
-        message={archivingCategory ? `Archive ${archivingCategory.name}? This removes it from the active category list.` : ''}
-        confirmLabel={isArchiving ? 'Archiving category...' : 'Archive category'}
+        title="归档分类"
+        message={archivingCategory ? `确定归档「${archivingCategory.name}」？归档后将不再显示在列表中。` : ''}
+        confirmLabel={isArchiving ? '归档中...' : '确认归档'}
         isSubmitting={isArchiving}
         error={archiveError}
         onConfirm={handleConfirmArchive}

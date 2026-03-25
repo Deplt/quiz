@@ -1,13 +1,13 @@
 function PageHeader({ title, subtitle = '', action = null }) {
   return (
-    <header>
+    <header className="page-header">
       <div>
-        <h1>{title}</h1>
-        {subtitle ? <p>{subtitle}</p> : null}
+        <h2 className="page-title">{title}</h2>
+        {subtitle ? <p className="page-header__subtitle">{subtitle}</p> : null}
       </div>
 
       {action ? (
-        <button type="button" onClick={action.onClick} disabled={action.disabled}>
+        <button type="button" className="btn btn-primary" onClick={action.onClick} disabled={action.disabled}>
           {action.label}
         </button>
       ) : null}

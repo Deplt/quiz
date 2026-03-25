@@ -2,304 +2,151 @@ import { useEffect, useState } from 'react';
 import { getCategoryChapters } from '../api/categories.js';
 
 const QUESTION_TYPE_OPTIONS = [
-  { value: 'single_choice', label: 'Single choice' },
-  { value: 'multi_choice', label: 'Multi choice' },
-  { value: 'true_false', label: 'True/false' },
-  { value: 'fill_blank', label: 'Fill blank' },
+  { value: 'single_choice', label: '单选题' },
+  { value: 'multi_choice', label: '多选题' },
+  { value: 'true_false', label: '判断题' },
+  { value: 'fill_blank', label: '填空题' },
 ];
 
 const DIFFICULTY_OPTIONS = [
-  { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
+  { value: 'easy', label: '简单' },
+  { value: 'medium', label: '中等' },
+  { value: 'hard', label: '困难' },
 ];
 
 const INITIAL_FORM = {
-  exam_category_id: '',
-  chapter_id: '',
-  type: 'single_choice',
-  content: '',
-  answer: '',
-  explanation: '',
-  difficulty: 'medium',
-  options_json: '',
+  exam_category_id: '', chapter_id: '', type: 'single_choice',
+  content: '', answer: '', explanation: '', difficulty: 'medium', options_json: '',
 };
 
-function getOptionsJsonValue(value) {
-  if (value === null || value === undefined || value === '') {
-    return '';
-  }
-
-  return JSON.stringify(value);
+function getOptionsJsonValue(v) {
+  if (v === null || v === undefined || v === '') return '';
+  return JSON.stringify(v);
 }
 
-function getFormValues(initialValues) {
+function getFormValues(v) {
   return {
-    exam_category_id: initialValues?.exam_category_id ? String(initialValues.exam_category_id) : INITIAL_FORM.exam_category_id,
-    chapter_id: initialValues?.chapter_id ? String(initialValues.chapter_id) : INITIAL_FORM.chapter_id,
-    type: initialValues?.type ?? INITIAL_FORM.type,
-    content: initialValues?.content ?? INITIAL_FORM.content,
-    answer: initialValues?.answer ?? INITIAL_FORM.answer,
-    explanation: initialValues?.explanation ?? INITIAL_FORM.explanation,
-    difficulty: initialValues?.difficulty ?? INITIAL_FORM.difficulty,
-    options_json: getOptionsJsonValue(initialValues?.options_json),
+    exam_category_id: v?.exam_category_id ? String(v.exam_category_id) : '',
+    chapter_id: v?.chapter_id ? String(v.chapter_id) : '',
+    type: v?.type ?? 'single_choice',
+    content: v?.content ?? '',
+    answer: v?.answer ?? '',
+    explanation: v?.explanation ?? '',
+    difficulty: v?.difficulty ?? 'medium',
+    options_json: getOptionsJsonValue(v?.options_json),
   };
 }
 
 function QuestionFormModal({
-  open,
-  onClose,
-  onSubmit,
-  categories = [],
-  initialValues = null,
-  title = 'Add question',
-  subtitle = 'Create a new question.',
-  submitLabel = 'Create question',
-  submittingLabel = 'Creating question...',
-  isSubmitting = false,
-  error = '',
+  open, onClose, onSubmit, categories = [], initialValues = null,
+  title = '新增题目', subtitle = '', submitLabel = '创建', submittingLabel = '创建中...',
+  isSubmitting = false, error = '',
 }) {
-  const [formValues, setFormValues] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(INITIAL_FORM);
   const [chapters, setChapters] = useState([]);
   const [validationError, setValidationError] = useState('');
 
   useEffect(() => {
-    if (open) {
-      setFormValues(getFormValues(initialValues));
-      setValidationError('');
-    }
+    if (open) { setForm(getFormValues(initialValues)); setValidationError(''); }
   }, [open, initialValues]);
 
   useEffect(() => {
-    let isMounted = true;
+    let m = true;
+    if (!open || !form.exam_category_id) { setChapters([]); return; }
+    getCategoryChapters(form.exam_category_id)
+      .then((d) => { if (m) setChapters(Array.isArray(d) ? d : []); })
+      .catch(() => { if (m) setChapters([]); });
+    return () => { m = false; };
+  }, [form.exam_category_id, open]);
 
-    async function loadChapters() {
-      if (!open || !formValues.exam_category_id) {
-        setChapters([]);
-        return;
-      }
+  if (!open) return null;
 
-      try {
-        const data = await getCategoryChapters(formValues.exam_category_id);
-
-        if (isMounted) {
-          setChapters(Array.isArray(data) ? data : []);
-        }
-      } catch {
-        if (isMounted) {
-          setChapters([]);
-        }
-      }
-    }
-
-    loadChapters();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [formValues.exam_category_id, open]);
-
-  if (!open) {
-    return null;
-  }
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-
+  function handleChange(e) {
+    const { name, value } = e.target;
     setValidationError('');
-
-    if (name === 'exam_category_id') {
-      setChapters([]);
-    }
-
-    setFormValues((current) => {
-      if (name === 'exam_category_id') {
-        return {
-          ...current,
-          exam_category_id: value,
-          chapter_id: '',
-        };
-      }
-
-      return {
-        ...current,
-        [name]: value,
-      };
-    });
+    if (name === 'exam_category_id') setChapters([]);
+    setForm((c) => name === 'exam_category_id' ? { ...c, exam_category_id: value, chapter_id: '' } : { ...c, [name]: value });
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
-
-    const trimmedContent = formValues.content.trim();
-    const trimmedAnswer = formValues.answer.trim();
-    const trimmedExplanation = formValues.explanation.trim();
-    const trimmedOptionsJson = formValues.options_json.trim();
-    let parsedOptionsJson = null;
-
-    if (!trimmedContent || !trimmedAnswer) {
-      setValidationError('Content and answer are required');
-      return;
+  function handleSubmit(e) {
+    e.preventDefault();
+    const content = form.content.trim();
+    const answer = form.answer.trim();
+    if (!content || !answer) { setValidationError('题目内容和答案不能为空'); return; }
+    let parsedOptions = null;
+    if (form.options_json.trim()) {
+      try { parsedOptions = JSON.parse(form.options_json); }
+      catch { setValidationError('选项 JSON 格式不正确'); return; }
     }
-
-    if (trimmedOptionsJson) {
-      try {
-        parsedOptionsJson = JSON.parse(trimmedOptionsJson);
-      } catch {
-        setValidationError('Options JSON must be valid JSON');
-        return;
-      }
-    }
-
     onSubmit({
-      exam_category_id: Number(formValues.exam_category_id),
-      chapter_id: Number(formValues.chapter_id),
-      type: formValues.type,
-      content: trimmedContent,
-      options_json: parsedOptionsJson,
-      answer: trimmedAnswer,
-      explanation: trimmedExplanation,
-      difficulty: formValues.difficulty,
+      exam_category_id: Number(form.exam_category_id),
+      chapter_id: Number(form.chapter_id),
+      type: form.type, content, options_json: parsedOptions,
+      answer, explanation: form.explanation.trim(), difficulty: form.difficulty,
     });
   }
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <div className="modal stack gap-md" role="dialog" aria-modal="true" aria-labelledby="question-form-title">
+      <div className="modal stack gap-md" role="dialog" aria-modal="true">
         <div className="modal__header">
-          <div>
-            <h2 className="modal__title" id="question-form-title">{title}</h2>
-            <p className="text-muted">{subtitle}</p>
-          </div>
+          <h2 className="modal__title">{title}</h2>
+          {subtitle && <p className="text-muted" style={{ margin: '4px 0 0' }}>{subtitle}</p>}
         </div>
-
         <form className="modal__body" onSubmit={handleSubmit}>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="q-cat">考试分类</label>
+              <select id="q-cat" name="exam_category_id" value={form.exam_category_id} onChange={handleChange} disabled={isSubmitting} required>
+                <option value="">请选择分类</option>
+                {categories.map((c) => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="q-ch">章节</label>
+              <select id="q-ch" name="chapter_id" value={form.chapter_id} onChange={handleChange} disabled={isSubmitting || !form.exam_category_id} required>
+                <option value="">请选择章节</option>
+                {chapters.map((c) => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="q-type">题型</label>
+              <select id="q-type" name="type" value={form.type} onChange={handleChange} disabled={isSubmitting} required>
+                {QUESTION_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="q-diff">难度</label>
+              <select id="q-diff" name="difficulty" value={form.difficulty} onChange={handleChange} disabled={isSubmitting} required>
+                {DIFFICULTY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
           <div className="field">
-            <label htmlFor="question-category-id">Category</label>
-            <select
-              id="question-category-id"
-              name="exam_category_id"
-              value={formValues.exam_category_id}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            >
-              <option value="">Select category</option>
-              {categories.map((category) => (
-                <option key={category.id} value={String(category.id)}>{category.name}</option>
-              ))}
-            </select>
+            <label htmlFor="q-content">题目内容</label>
+            <textarea id="q-content" name="content" value={form.content} onChange={handleChange} disabled={isSubmitting} rows="3" required placeholder="请输入题目内容" />
+          </div>
+          <div className="field">
+            <label htmlFor="q-answer">答案</label>
+            <input id="q-answer" name="answer" type="text" value={form.answer} onChange={handleChange} disabled={isSubmitting} required placeholder="单选填字母如 A，多选填 A,C" />
+          </div>
+          <div className="field">
+            <label htmlFor="q-explanation">解析</label>
+            <textarea id="q-explanation" name="explanation" value={form.explanation} onChange={handleChange} disabled={isSubmitting} rows="2" placeholder="可选" />
+          </div>
+          <div className="field">
+            <label htmlFor="q-options">选项 JSON</label>
+            <textarea id="q-options" name="options_json" value={form.options_json} onChange={handleChange} disabled={isSubmitting} rows="3" placeholder='[{"label":"A","text":"选项一"},{"label":"B","text":"选项二"}]' />
           </div>
 
-          <div className="field">
-            <label htmlFor="question-chapter-id">Chapter</label>
-            <select
-              id="question-chapter-id"
-              name="chapter_id"
-              value={formValues.chapter_id}
-              onChange={handleChange}
-              disabled={isSubmitting || !formValues.exam_category_id}
-              required
-            >
-              <option value="">Select chapter</option>
-              {chapters.map((chapter) => (
-                <option key={chapter.id} value={String(chapter.id)}>{chapter.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="question-type">Type</label>
-            <select
-              id="question-type"
-              name="type"
-              value={formValues.type}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            >
-              {QUESTION_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="question-content">Content</label>
-            <textarea
-              id="question-content"
-              name="content"
-              value={formValues.content}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              rows="4"
-              required
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="question-answer">Answer</label>
-            <input
-              id="question-answer"
-              name="answer"
-              type="text"
-              value={formValues.answer}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="question-explanation">Explanation</label>
-            <textarea
-              id="question-explanation"
-              name="explanation"
-              value={formValues.explanation}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              rows="3"
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="question-difficulty">Difficulty</label>
-            <select
-              id="question-difficulty"
-              name="difficulty"
-              value={formValues.difficulty}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            >
-              {DIFFICULTY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="question-options-json">Options JSON</label>
-            <textarea
-              id="question-options-json"
-              name="options_json"
-              value={formValues.options_json}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              rows="4"
-            />
-          </div>
-
-          {validationError ? <p className="error-banner" role="alert">{validationError}</p> : null}
-          {error ? <p className="error-banner" role="alert">{error}</p> : null}
+          {validationError && <p className="error-banner" role="alert">{validationError}</p>}
+          {error && <p className="error-banner" role="alert">{error}</p>}
 
           <div className="modal-actions">
-            <button className="button button-secondary" type="button" onClick={onClose} disabled={isSubmitting}>
-              Cancel
-            </button>
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? submittingLabel : submitLabel}
-            </button>
+            <button className="btn btn-secondary" type="button" onClick={onClose} disabled={isSubmitting}>取消</button>
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>{isSubmitting ? submittingLabel : submitLabel}</button>
           </div>
         </form>
       </div>

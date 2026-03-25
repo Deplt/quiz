@@ -11,36 +11,23 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import QuestionFormModal from '../components/QuestionFormModal.jsx';
 
-const DEFAULT_FILTERS = {
-  exam_category_id: '',
-  chapter_id: '',
-  type: '',
-};
-
-const DEFAULT_PAGINATION = {
-  page: 1,
-  pageSize: 20,
-};
+const DEFAULT_FILTERS = { exam_category_id: '', chapter_id: '', type: '' };
+const DEFAULT_PAGINATION = { page: 1, pageSize: 20 };
 
 const QUESTION_TYPE_OPTIONS = [
-  { value: '', label: 'All types' },
-  { value: 'single_choice', label: 'Single choice' },
-  { value: 'multi_choice', label: 'Multi choice' },
-  { value: 'true_false', label: 'True/false' },
-  { value: 'fill_blank', label: 'Fill blank' },
+  { value: '', label: '全部题型' },
+  { value: 'single_choice', label: '单选题' },
+  { value: 'multi_choice', label: '多选题' },
+  { value: 'true_false', label: '判断题' },
+  { value: 'fill_blank', label: '填空题' },
 ];
 
 function formatQuestionType(type) {
-  const matchedOption = QUESTION_TYPE_OPTIONS.find((option) => option.value === type);
-  return matchedOption?.label ?? '—';
+  return QUESTION_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? '—';
 }
 
-function isArchivedQuestion(question) {
-  return question?.status === 'archived' || Boolean(question?.archived_at);
-}
-
-function normalizeLoadedQuestions(items) {
-  return items.filter((question) => !isArchivedQuestion(question));
+function isArchivedQuestion(q) {
+  return q?.status === 'archived' || Boolean(q?.archived_at);
 }
 
 function QuestionsPage() {
@@ -63,208 +50,81 @@ function QuestionsPage() {
   const [isArchiving, setIsArchiving] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadCategories() {
-      try {
-        const data = await getCategories();
-
-        if (isMounted) {
-          setCategories(Array.isArray(data) ? data : []);
-        }
-      } catch {
-        if (isMounted) {
-          setCategories([]);
-        }
-      }
-    }
-
-    loadCategories();
-
-    return () => {
-      isMounted = false;
-    };
+    let m = true;
+    getCategories().then((d) => { if (m) setCategories(Array.isArray(d) ? d : []); }).catch(() => {});
+    return () => { m = false; };
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadQuestions() {
+    let m = true;
+    async function load() {
       setLoadError('');
       setIsLoading(true);
-
       try {
-        const data = await getQuestions({
-          ...filters,
-          page: pagination.page,
-          pageSize: pagination.pageSize,
-        });
-
-        if (!isMounted) {
-          return;
-        }
-
-        setQuestions(normalizeLoadedQuestions(Array.isArray(data?.list) ? data.list : []));
+        const data = await getQuestions({ ...filters, page: pagination.page, pageSize: pagination.pageSize });
+        if (!m) return;
+        setQuestions((Array.isArray(data?.list) ? data.list : []).filter((q) => !isArchivedQuestion(q)));
         setTotal(Number(data?.total) || 0);
         setSelectedQuestionIds([]);
-        setPagination({
-          page: Number(data?.page) || DEFAULT_PAGINATION.page,
-          pageSize: Number(data?.pageSize) || DEFAULT_PAGINATION.pageSize,
-        });
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
+        setPagination({ page: Number(data?.page) || 1, pageSize: Number(data?.pageSize) || 20 });
+      } catch (err) {
+        if (!m) return;
         setQuestions([]);
         setTotal(0);
-        setLoadError(error instanceof Error ? error.message : 'Failed to load questions');
+        setLoadError(err instanceof Error ? err.message : '加载题目失败');
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (m) setIsLoading(false);
       }
     }
-
-    loadQuestions();
-
-    return () => {
-      isMounted = false;
-    };
+    load();
+    return () => { m = false; };
   }, [filters, pagination.page, pagination.pageSize, reloadCount]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadChapters() {
-      if (!filters.exam_category_id) {
-        setChapters([]);
-        return;
-      }
-
+    let m = true;
+    async function load() {
+      if (!filters.exam_category_id) { setChapters([]); return; }
       try {
         const data = await getCategoryChapters(filters.exam_category_id);
-
-        if (isMounted) {
-          setChapters(Array.isArray(data) ? data : []);
-        }
-      } catch {
-        if (isMounted) {
-          setChapters([]);
-        }
-      }
+        if (m) setChapters(Array.isArray(data) ? data : []);
+      } catch { if (m) setChapters([]); }
     }
-
-    loadChapters();
-
-    return () => {
-      isMounted = false;
-    };
+    load();
+    return () => { m = false; };
   }, [filters.exam_category_id]);
 
   const totalPages = Math.max(1, Math.ceil(total / pagination.pageSize));
-  const summaryText = useMemo(() => `Showing ${questions.length} of ${total} questions`, [questions.length, total]);
+  const summaryText = useMemo(() => `共 ${total} 条，当前显示 ${questions.length} 条`, [questions.length, total]);
   const isEditing = Boolean(editingQuestion);
-  const hasSelectedQuestions = selectedQuestionIds.length > 0;
+  const hasSelected = selectedQuestionIds.length > 0;
 
-  function handleCategoryChange(event) {
-    const nextCategoryId = event.target.value;
-    const shouldClearChapters = Boolean(filters.exam_category_id) && Boolean(nextCategoryId)
-      && filters.exam_category_id !== nextCategoryId;
-
-    if (shouldClearChapters) {
-      setChapters([]);
-    }
-
-    setFilters((current) => ({
-      ...current,
-      exam_category_id: nextCategoryId,
-      chapter_id: '',
-    }));
-    setPagination((current) => ({
-      ...current,
-      page: 1,
-    }));
+  function handleFilterChange(key) {
+    return (e) => {
+      const val = e.target.value;
+      setFilters((c) => {
+        const next = { ...c, [key]: val };
+        if (key === 'exam_category_id') { next.chapter_id = ''; setChapters([]); }
+        return next;
+      });
+      setPagination((c) => ({ ...c, page: 1 }));
+    };
   }
 
-  function handleChapterChange(event) {
-    const nextChapterId = event.target.value;
+  function handleOpenCreateModal() { setEditingQuestion(null); setFormError(''); setIsModalOpen(true); }
+  function handleOpenEditModal(q) { setEditingQuestion(q); setFormError(''); setIsModalOpen(true); }
+  function handleCloseModal() { if (isSaving) return; setFormError(''); setEditingQuestion(null); setIsModalOpen(false); }
 
-    setFilters((current) => ({
-      ...current,
-      chapter_id: nextChapterId,
-    }));
-    setPagination((current) => ({
-      ...current,
-      page: 1,
-    }));
+  function handleToggleSelection(id) {
+    setSelectedQuestionIds((c) => c.includes(id) ? c.filter((x) => x !== id) : [...c, id]);
   }
 
-  function handleTypeChange(event) {
-    const nextType = event.target.value;
-
-    setFilters((current) => ({
-      ...current,
-      type: nextType,
-    }));
-    setPagination((current) => ({
-      ...current,
-      page: 1,
-    }));
-  }
-
-  function handleOpenCreateModal() {
-    setEditingQuestion(null);
-    setFormError('');
-    setIsModalOpen(true);
-  }
-
-  function handleOpenEditModal(question) {
-    setEditingQuestion(question);
-    setFormError('');
-    setIsModalOpen(true);
-  }
-
-  function handleCloseModal() {
-    if (isSaving) {
-      return;
-    }
-
-    setFormError('');
-    setEditingQuestion(null);
-    setIsModalOpen(false);
-  }
-
-  function handleToggleQuestionSelection(questionId) {
-    setSelectedQuestionIds((current) => (
-      current.includes(questionId)
-        ? current.filter((id) => id !== questionId)
-        : [...current, questionId]
-    ));
-  }
-
-  function handleOpenArchiveDialog(target) {
-    setArchiveError('');
-    setArchiveTarget(target);
-  }
-
-  function handleCloseArchiveDialog() {
-    if (isArchiving) {
-      return;
-    }
-
-    setArchiveError('');
-    setArchiveTarget(null);
-  }
+  function handleOpenArchiveDialog(target) { setArchiveError(''); setArchiveTarget(target); }
+  function handleCloseArchiveDialog() { if (isArchiving) return; setArchiveError(''); setArchiveTarget(null); }
 
   async function handleConfirmArchive() {
-    if (!archiveTarget) {
-      return;
-    }
-
+    if (!archiveTarget) return;
     setArchiveError('');
     setIsArchiving(true);
-
     try {
       if (archiveTarget.type === 'single') {
         await archiveQuestion(archiveTarget.question.id);
@@ -272,11 +132,10 @@ function QuestionsPage() {
         await batchArchiveQuestions(archiveTarget.ids);
         setSelectedQuestionIds([]);
       }
-
       setArchiveTarget(null);
-      setReloadCount((current) => current + 1);
-    } catch (error) {
-      setArchiveError(error instanceof Error ? error.message : 'Failed to archive questions');
+      setReloadCount((c) => c + 1);
+    } catch (err) {
+      setArchiveError(err instanceof Error ? err.message : '归档失败');
     } finally {
       setIsArchiving(false);
     }
@@ -285,19 +144,17 @@ function QuestionsPage() {
   async function handleSubmitQuestion(payload) {
     setFormError('');
     setIsSaving(true);
-
     try {
       if (editingQuestion) {
         await updateQuestion(editingQuestion.id, payload);
       } else {
         await createQuestion(payload);
       }
-
       setEditingQuestion(null);
       setIsModalOpen(false);
-      setReloadCount((current) => current + 1);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Failed to save question');
+      setReloadCount((c) => c + 1);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : '保存失败');
     } finally {
       setIsSaving(false);
     }
@@ -306,140 +163,82 @@ function QuestionsPage() {
   return (
     <section className="stack gap-md">
       <PageHeader
-        title="Questions"
-        subtitle="Manage quiz questions."
-        action={{
-          label: 'Add question',
-          onClick: handleOpenCreateModal,
-          disabled: isSaving,
-        }}
+        title="题目管理"
+        subtitle="管理题库中的题目"
+        action={{ label: '新增题目', onClick: handleOpenCreateModal, disabled: isSaving }}
       />
 
       <div className="table-card stack gap-md">
         <div className="filter-grid">
           <div className="field">
-            <label htmlFor="question-filter-category">Category</label>
-            <select
-              id="question-filter-category"
-              value={filters.exam_category_id}
-              onChange={handleCategoryChange}
-            >
-              <option value="">All categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={String(category.id)}>{category.name}</option>
-              ))}
+            <label htmlFor="q-filter-cat">考试分类</label>
+            <select id="q-filter-cat" value={filters.exam_category_id} onChange={handleFilterChange('exam_category_id')}>
+              <option value="">全部分类</option>
+              {categories.map((c) => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
             </select>
           </div>
-
           <div className="field">
-            <label htmlFor="question-filter-chapter">Chapter</label>
-            <select
-              id="question-filter-chapter"
-              value={filters.chapter_id}
-              onChange={handleChapterChange}
-              disabled={!filters.exam_category_id}
-            >
-              <option value="">All chapters</option>
-              {chapters.map((chapter) => (
-                <option key={chapter.id} value={String(chapter.id)}>{chapter.name}</option>
-              ))}
+            <label htmlFor="q-filter-ch">章节</label>
+            <select id="q-filter-ch" value={filters.chapter_id} onChange={handleFilterChange('chapter_id')} disabled={!filters.exam_category_id}>
+              <option value="">全部章节</option>
+              {chapters.map((c) => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
             </select>
           </div>
-
           <div className="field">
-            <label htmlFor="question-filter-type">Type</label>
-            <select
-              id="question-filter-type"
-              value={filters.type}
-              onChange={handleTypeChange}
-            >
-              {QUESTION_TYPE_OPTIONS.map((option) => (
-                <option key={option.value || 'all'} value={option.value}>{option.label}</option>
-              ))}
+            <label htmlFor="q-filter-type">题型</label>
+            <select id="q-filter-type" value={filters.type} onChange={handleFilterChange('type')}>
+              {QUESTION_TYPE_OPTIONS.map((o) => <option key={o.value || 'all'} value={o.value}>{o.label}</option>)}
             </select>
           </div>
         </div>
 
         <div className="modal-actions">
-          <p>{summaryText}</p>
-          <button
-            className="button button-danger"
-            type="button"
-            onClick={() => handleOpenArchiveDialog({ type: 'batch', ids: selectedQuestionIds })}
-            disabled={!hasSelectedQuestions || isSaving || isArchiving}
-          >
-            Archive selected
+          <p style={{ margin: 0, flex: 1 }}>{summaryText}</p>
+          <button className="btn btn-danger" type="button" onClick={() => handleOpenArchiveDialog({ type: 'batch', ids: selectedQuestionIds })} disabled={!hasSelected || isSaving || isArchiving}>
+            批量归档
           </button>
         </div>
       </div>
 
-      {loadError ? <p className="error-banner" role="alert">{loadError}</p> : null}
+      {loadError && <p className="error-banner" role="alert">{loadError}</p>}
 
       <div className="table-card table-scroll">
         {isLoading ? (
-          <p>Loading questions...</p>
+          <p className="page-loading">加载中...</p>
         ) : questions.length === 0 ? (
-          <div className="empty-state">No questions yet.</div>
+          <div className="empty-state">暂无题目</div>
         ) : (
           <table>
             <thead>
               <tr>
-                <th scope="col">Select</th>
-                <th scope="col">ID</th>
-                <th scope="col">Content</th>
-                <th scope="col">Type</th>
-                <th scope="col">Category</th>
-                <th scope="col">Chapter</th>
-                <th scope="col">Status</th>
-                <th scope="col">Actions</th>
+                <th style={{ width: 40 }}>选择</th>
+                <th>ID</th>
+                <th>题目内容</th>
+                <th>题型</th>
+                <th>分类</th>
+                <th>章节</th>
+                <th>状态</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
-              {questions.map((question) => {
-                const isSelected = selectedQuestionIds.includes(question.id);
-
-                return (
-                  <tr key={question.id}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${question.content}`}
-                        checked={isSelected}
-                        onChange={() => handleToggleQuestionSelection(question.id)}
-                        disabled={isSaving || isArchiving}
-                      />
-                    </td>
-                    <td>{question.id}</td>
-                    <td>{question.content}</td>
-                    <td>{formatQuestionType(question.type)}</td>
-                    <td>{question.exam_category_id ?? '—'}</td>
-                    <td>{question.chapter_id ?? '—'}</td>
-                    <td>{question.status ?? '—'}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button
-                          className="button button-secondary"
-                          type="button"
-                          aria-label={`Edit ${question.content}`}
-                          onClick={() => handleOpenEditModal(question)}
-                          disabled={isSaving || isArchiving}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="button button-danger"
-                          type="button"
-                          aria-label={`Archive ${question.content}`}
-                          onClick={() => handleOpenArchiveDialog({ type: 'single', question })}
-                          disabled={isSaving || isArchiving}
-                        >
-                          Archive
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {questions.map((q) => (
+                <tr key={q.id}>
+                  <td><input type="checkbox" checked={selectedQuestionIds.includes(q.id)} onChange={() => handleToggleSelection(q.id)} disabled={isSaving || isArchiving} /></td>
+                  <td>{q.id}</td>
+                  <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.content}</td>
+                  <td>{formatQuestionType(q.type)}</td>
+                  <td>{q.exam_category_id ?? '—'}</td>
+                  <td>{q.chapter_id ?? '—'}</td>
+                  <td>{q.status ?? '—'}</td>
+                  <td>
+                    <div className="table-actions">
+                      <button className="btn btn-text" type="button" onClick={() => handleOpenEditModal(q)} disabled={isSaving || isArchiving}>编辑</button>
+                      <button className="btn btn-text btn-text--danger" type="button" onClick={() => handleOpenArchiveDialog({ type: 'single', question: q })} disabled={isSaving || isArchiving}>归档</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
@@ -447,23 +246,9 @@ function QuestionsPage() {
 
       {totalPages > 1 && (
         <div className="pagination">
-          <button
-            className="button button-secondary"
-            type="button"
-            disabled={pagination.page <= 1 || isLoading}
-            onClick={() => setPagination((c) => ({ ...c, page: c.page - 1 }))}
-          >
-            Previous
-          </button>
-          <span>Page {pagination.page} / {totalPages}</span>
-          <button
-            className="button button-secondary"
-            type="button"
-            disabled={pagination.page >= totalPages || isLoading}
-            onClick={() => setPagination((c) => ({ ...c, page: c.page + 1 }))}
-          >
-            Next
-          </button>
+          <button className="btn btn-secondary" type="button" disabled={pagination.page <= 1 || isLoading} onClick={() => setPagination((c) => ({ ...c, page: c.page - 1 }))}>上一页</button>
+          <span>第 {pagination.page} / {totalPages} 页</span>
+          <button className="btn btn-secondary" type="button" disabled={pagination.page >= totalPages || isLoading} onClick={() => setPagination((c) => ({ ...c, page: c.page + 1 }))}>下一页</button>
         </div>
       )}
 
@@ -473,29 +258,23 @@ function QuestionsPage() {
         onSubmit={handleSubmitQuestion}
         categories={categories}
         initialValues={editingQuestion}
-        title={isEditing ? 'Edit question' : 'Add question'}
-        subtitle={isEditing ? 'Update the selected question.' : 'Create a new quiz question.'}
-        submitLabel={isEditing ? 'Save changes' : 'Create question'}
-        submittingLabel={isEditing ? 'Saving changes...' : 'Creating question...'}
+        title={isEditing ? '编辑题目' : '新增题目'}
+        subtitle={isEditing ? '修改题目信息' : '创建新的题目'}
+        submitLabel={isEditing ? '保存' : '创建'}
+        submittingLabel={isEditing ? '保存中...' : '创建中...'}
         isSubmitting={isSaving}
         error={formError}
       />
 
       <ConfirmDialog
         open={Boolean(archiveTarget)}
-        title={archiveTarget?.type === 'batch' ? 'Archive selected questions' : 'Archive question'}
+        title={archiveTarget?.type === 'batch' ? '批量归档题目' : '归档题目'}
         message={archiveTarget?.type === 'batch'
-          ? `Archive ${archiveTarget.ids.length} selected questions? This removes them from the active question list.`
-          : archiveTarget?.question
-            ? `Archive ${archiveTarget.question.content}? This removes it from the active question list.`
-            : ''}
+          ? `确定归档已选中的 ${archiveTarget.ids.length} 道题目？`
+          : archiveTarget?.question ? `确定归档「${archiveTarget.question.content}」？` : ''}
         confirmLabel={isArchiving
-          ? archiveTarget?.type === 'batch'
-            ? 'Archiving selected questions...'
-            : 'Archiving question...'
-          : archiveTarget?.type === 'batch'
-            ? 'Archive selected questions'
-            : 'Archive question'}
+          ? '归档中...'
+          : archiveTarget?.type === 'batch' ? '确认批量归档' : '确认归档'}
         isSubmitting={isArchiving}
         error={archiveError}
         onConfirm={handleConfirmArchive}

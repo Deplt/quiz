@@ -1,122 +1,64 @@
 import { useEffect, useState } from 'react';
 
-const INITIAL_FORM = {
-  name: '',
-  icon: '',
-  sort_order: 1,
-};
+const INITIAL_FORM = { name: '', icon: '', sort_order: 1 };
 
-function getFormValues(initialValues) {
+function getFormValues(v) {
   return {
-    name: initialValues?.name ?? INITIAL_FORM.name,
-    icon: initialValues?.icon ?? INITIAL_FORM.icon,
-    sort_order: initialValues?.sort_order ?? INITIAL_FORM.sort_order,
+    name: v?.name ?? '',
+    icon: v?.icon ?? '',
+    sort_order: v?.sort_order ?? 1,
   };
 }
 
 function CategoryFormModal({
-  open,
-  onClose,
-  onSubmit,
-  initialValues = null,
-  title = 'Add category',
-  subtitle = 'Create a new quiz category.',
-  submitLabel = 'Create category',
-  submittingLabel = 'Creating category...',
-  isSubmitting = false,
-  error = '',
+  open, onClose, onSubmit, initialValues = null,
+  title = '新增分类', subtitle = '', submitLabel = '创建', submittingLabel = '创建中...',
+  isSubmitting = false, error = '',
 }) {
-  const [formValues, setFormValues] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
-    if (open) {
-      setFormValues(getFormValues(initialValues));
-    }
+    if (open) setForm(getFormValues(initialValues));
   }, [open, initialValues]);
 
-  if (!open) {
-    return null;
+  if (!open) return null;
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm((c) => ({ ...c, [name]: value }));
   }
 
-  function handleChange(event) {
-    const { name, value } = event.target;
-
-    setFormValues((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-
-    onSubmit({
-      name: formValues.name.trim(),
-      icon: formValues.icon.trim(),
-      sort_order: Number(formValues.sort_order),
-    });
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSubmit({ name: form.name.trim(), icon: form.icon.trim(), sort_order: Number(form.sort_order) });
   }
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <div className="modal stack gap-md" role="dialog" aria-modal="true" aria-labelledby="category-form-title">
+      <div className="modal stack gap-md" role="dialog" aria-modal="true">
         <div className="modal__header">
-          <div>
-            <h2 className="modal__title" id="category-form-title">{title}</h2>
-            <p className="text-muted">{subtitle}</p>
-          </div>
+          <h2 className="modal__title">{title}</h2>
+          {subtitle && <p className="text-muted" style={{ margin: '4px 0 0' }}>{subtitle}</p>}
         </div>
-
         <form className="modal__body" onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="category-name">Name</label>
-            <input
-              id="category-name"
-              name="name"
-              type="text"
-              value={formValues.name}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            />
+            <label htmlFor="cat-name">名称</label>
+            <input id="cat-name" name="name" type="text" value={form.name} onChange={handleChange} disabled={isSubmitting} required placeholder="请输入分类名称" />
           </div>
-
           <div className="field">
-            <label htmlFor="category-icon">Icon</label>
-            <input
-              id="category-icon"
-              name="icon"
-              type="text"
-              value={formValues.icon}
-              onChange={handleChange}
-              disabled={isSubmitting}
-            />
+            <label htmlFor="cat-icon">图标</label>
+            <input id="cat-icon" name="icon" type="text" value={form.icon} onChange={handleChange} disabled={isSubmitting} placeholder="可选" />
           </div>
-
           <div className="field">
-            <label htmlFor="category-sort-order">Sort order</label>
-            <input
-              id="category-sort-order"
-              name="sort_order"
-              type="number"
-              min="1"
-              step="1"
-              value={formValues.sort_order}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            />
+            <label htmlFor="cat-sort">排序</label>
+            <input id="cat-sort" name="sort_order" type="number" min="1" step="1" value={form.sort_order} onChange={handleChange} disabled={isSubmitting} required />
           </div>
 
-          {error ? <p className="error-banner" role="alert">{error}</p> : null}
+          {error && <p className="error-banner" role="alert">{error}</p>}
 
           <div className="modal-actions">
-            <button className="button button-secondary" type="button" onClick={onClose} disabled={isSubmitting}>
-              Cancel
-            </button>
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? submittingLabel : submitLabel}
-            </button>
+            <button className="btn btn-secondary" type="button" onClick={onClose} disabled={isSubmitting}>取消</button>
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>{isSubmitting ? submittingLabel : submitLabel}</button>
           </div>
         </form>
       </div>

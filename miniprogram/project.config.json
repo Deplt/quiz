@@ -34,8 +34,8 @@
     "condition": false
   },
   "compileType": "miniprogram",
-  "libVersion": "3.3.4",
-  "appid": "",
+  "libVersion": "3.15.0",
+  "appid": "wxcb936ac66320fff0",
   "projectname": "quiz-miniprogram",
   "condition": {},
   "editorSetting": {

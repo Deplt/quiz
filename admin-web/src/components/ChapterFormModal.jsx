@@ -1,153 +1,76 @@
 import { useEffect, useRef, useState } from 'react';
 
-const INITIAL_FORM = {
-  exam_category_id: '',
-  name: '',
-  sort_order: 1,
-};
+const INITIAL_FORM = { exam_category_id: '', name: '', sort_order: 1 };
 
-function getFormValues(initialValues) {
+function getFormValues(v) {
   return {
-    exam_category_id: initialValues?.exam_category_id ?? INITIAL_FORM.exam_category_id,
-    name: initialValues?.name ?? INITIAL_FORM.name,
-    sort_order: initialValues?.sort_order ?? INITIAL_FORM.sort_order,
+    exam_category_id: v?.exam_category_id ?? '',
+    name: v?.name ?? '',
+    sort_order: v?.sort_order ?? 1,
   };
 }
 
 function ChapterFormModal({
-  open,
-  onClose,
-  onSubmit,
-  initialValues,
-  title = 'Add chapter',
-  subtitle = 'Create a new chapter for the selected category.',
-  submitLabel = 'Create chapter',
-  submittingLabel = 'Creating chapter...',
-  isSubmitting = false,
-  error = '',
+  open, onClose, onSubmit, initialValues,
+  title = '新增章节', subtitle = '', submitLabel = '创建', submittingLabel = '创建中...',
+  isSubmitting = false, error = '',
 }) {
-  const [formValues, setFormValues] = useState(INITIAL_FORM);
-  const hasEditedSortOrderRef = useRef(false);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const hasEditedSortRef = useRef(false);
 
   useEffect(() => {
-    if (open) {
-      setFormValues(getFormValues(initialValues));
-      hasEditedSortOrderRef.current = false;
-    }
+    if (open) { setForm(getFormValues(initialValues)); hasEditedSortRef.current = false; }
   }, [open]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const nextInitialValues = getFormValues(initialValues);
-
-    setFormValues((current) => {
-      if (current.exam_category_id !== nextInitialValues.exam_category_id) {
-        hasEditedSortOrderRef.current = false;
-        return nextInitialValues;
-      }
-
-      if (hasEditedSortOrderRef.current || current.sort_order === nextInitialValues.sort_order) {
-        return current;
-      }
-
-      return {
-        ...current,
-        sort_order: nextInitialValues.sort_order,
-      };
+    if (!open) return;
+    const next = getFormValues(initialValues);
+    setForm((c) => {
+      if (c.exam_category_id !== next.exam_category_id) { hasEditedSortRef.current = false; return next; }
+      if (hasEditedSortRef.current || c.sort_order === next.sort_order) return c;
+      return { ...c, sort_order: next.sort_order };
     });
   }, [initialValues?.exam_category_id, initialValues?.sort_order, open]);
 
-  if (!open) {
-    return null;
+  if (!open) return null;
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    if (name === 'sort_order') hasEditedSortRef.current = true;
+    setForm((c) => ({ ...c, [name]: value }));
   }
 
-  function handleChange(event) {
-    const { name, value } = event.target;
-
-    if (name === 'sort_order') {
-      hasEditedSortOrderRef.current = true;
-    }
-
-    setFormValues((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-
-    onSubmit({
-      exam_category_id: Number(formValues.exam_category_id),
-      name: formValues.name.trim(),
-      sort_order: Number(formValues.sort_order),
-    });
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSubmit({ exam_category_id: Number(form.exam_category_id), name: form.name.trim(), sort_order: Number(form.sort_order) });
   }
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <div className="modal stack gap-md" role="dialog" aria-modal="true" aria-labelledby="chapter-form-title">
+      <div className="modal stack gap-md" role="dialog" aria-modal="true">
         <div className="modal__header">
-          <div>
-            <h2 className="modal__title" id="chapter-form-title">{title}</h2>
-            <p className="text-muted">{subtitle}</p>
-          </div>
+          <h2 className="modal__title">{title}</h2>
+          {subtitle && <p className="text-muted" style={{ margin: '4px 0 0' }}>{subtitle}</p>}
         </div>
-
         <form className="modal__body" onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="chapter-category-id">Category ID</label>
-            <input
-              id="chapter-category-id"
-              name="exam_category_id"
-              type="number"
-              value={formValues.exam_category_id}
-              onChange={handleChange}
-              disabled
-              readOnly
-            />
+            <label htmlFor="ch-cat-id">分类 ID</label>
+            <input id="ch-cat-id" name="exam_category_id" type="number" value={form.exam_category_id} onChange={handleChange} disabled readOnly />
           </div>
-
           <div className="field">
-            <label htmlFor="chapter-name">Name</label>
-            <input
-              id="chapter-name"
-              name="name"
-              type="text"
-              value={formValues.name}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            />
+            <label htmlFor="ch-name">名称</label>
+            <input id="ch-name" name="name" type="text" value={form.name} onChange={handleChange} disabled={isSubmitting} required placeholder="请输入章节名称" />
           </div>
-
           <div className="field">
-            <label htmlFor="chapter-sort-order">Sort order</label>
-            <input
-              id="chapter-sort-order"
-              name="sort_order"
-              type="number"
-              min="1"
-              step="1"
-              value={formValues.sort_order}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              required
-            />
+            <label htmlFor="ch-sort">排序</label>
+            <input id="ch-sort" name="sort_order" type="number" min="1" step="1" value={form.sort_order} onChange={handleChange} disabled={isSubmitting} required />
           </div>
 
-          {error ? <p className="error-banner" role="alert">{error}</p> : null}
+          {error && <p className="error-banner" role="alert">{error}</p>}
 
           <div className="modal-actions">
-            <button className="button button-secondary" type="button" onClick={onClose} disabled={isSubmitting}>
-              Cancel
-            </button>
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? submittingLabel : submitLabel}
-            </button>
+            <button className="btn btn-secondary" type="button" onClick={onClose} disabled={isSubmitting}>取消</button>
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>{isSubmitting ? submittingLabel : submitLabel}</button>
           </div>
         </form>
       </div>
